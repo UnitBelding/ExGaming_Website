@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Fractal Generator</title>
+    <link rel="icon" href=
+"https://en.wikipedia.org/wiki/File:Mandelbrot_sequence_new.gif"
+        type="image/x-icon" />
+    <style>
+        .slider {
+            width: 75%;
+        }
+
+        #stats {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #ffffff;
+            font-size: 20px;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        #version {
+            position: absolute;
+            bottom: 40px;
+            right: 1%;
+            color: #ffffff;
+            font-size: 21px;
+            font-weight: bold;
+        }
+
+        #made {
+            position: absolute;
+            bottom: 20px;
+            right: 1%;
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body style="background-color:#262f32; color:#ffffff; font-family:sans-serif;">
+    <div class="slidecontainer">
+        <b>Zoom:</b>
+        <input type="range" min="100" max="200000" value="450" class="slider" id="zoom">
+        <input type="number" id="zoomInput" value="450" min="100" max="200000">
+        <br>
+        <b>X Offset:</b>
+        <input type="range" min="-2" max="2" value="-0.5" step="0.00001" class="slider" id="x">
+        <input type="number" id="xInput" value="-0.5" min="-2" max="2" step="0.00001">
+        <br>
+        <b>Y Offset:</b>
+        <input type="range" min="-2" max="2" value="0" step="0.00001" class="slider" id="y">
+        <input type="number" id="yInput" value="0" min="-2" max="2" step="0.00001">
+        <br>
+        <b>Resolution:</b>
+        <input type="range" min="1" max="8" value="5" step="0.5" class="slider" id="resolution">
+        <input type="number" id="resolutionInput" value="5" min="0.5" max="8" step="0.5">
+    </div>
+    <canvas id="gardun" width="1024" height="1024"></canvas>
+    <div id="stats">
+        <div id="renderTimeDisplay">Render Time: 0 ms</div>
+        <div id="fpsDisplay">FPS: 0</div>
+    </div>
+    <div id="version">Beta version 0.9.8</div>
+    <div id="made">Made by: Uriel Baosiwcz</div>
+    <script>
+        const m = document.getElementById("gardun").getContext("2d");
+        const ZrangeInput = document.getElementById("zoom");
+        const XrangeInput = document.getElementById("x");
+        const YrangeInput = document.getElementById("y");
+        const RrangeInput = document.getElementById("resolution");
+        const zoomInput = document.getElementById("zoomInput");
+        const xInput = document.getElementById("xInput");
+        const yInput = document.getElementById("yInput");
+        const resInput = document.getElementById("resolutionInput");
+        const renderTimeDisplay = document.getElementById("renderTimeDisplay");
+        const fpsDisplay = document.getElementById("fpsDisplay");
+
+        let needsRedraw = true;
+        let prevValues = {
+            zoom: ZrangeInput.value,
+            x: XrangeInput.value,
+            y: YrangeInput.value,
+            resolution: RrangeInput.value
+        };
+        let frameCount = 0;
+        let lastTime = performance.now();
+
+        const atom = function(x, y, c, size) {
+            m.fillStyle = c;
+            m.fillRect(x, y, size, size);
+        };
+
+        const draw = () => {
+            if (!needsRedraw) return;
+
+            m.fillStyle = "#fafafa";
+            m.fillRect(0, 0, 1024, 1024);
+
+            const z = ZrangeInput.value;
+            const X = parseFloat(XrangeInput.value);
+            const Y = parseFloat(YrangeInput.value);
+            const r = parseFloat(RrangeInput.value);
+
+            for (let y = 1; y < 1024; y += r) {
+                for (let x = 1; x < 1024; x += r) {
+                    let dx = (x - 512) / z + X;
+                    let dy = (y - 512) / z - Y;
+                    let a = dx;
+                    let b = dy;
+
+                    for (let t = 1; t < 200; t++) {
+                        let d = (a * a) - (b * b) + dx;
+                        b = 2 * (a * b) + dy;
+                        a = d;
+                        let H = d > 10;
+
+                        if (H) {
+                            atom(x, y, `rgb(${t * 6},${t*2.2},${t * 1.5})`, r);
+                            break;
+                        }
+                    }
+                }
+            }
+            needsRedraw = false;
+        };
+
+        const syncValues = (slider, input, key) => {
+            input.value = slider.value;
+            if (slider.value !== prevValues[key]) {
+                needsRedraw = true;
+                prevValues[key] = slider.value;
+            }
+        };
+
+        ZrangeInput.addEventListener('input', () => syncValues(ZrangeInput, zoomInput, 'zoom'));
+        XrangeInput.addEventListener('input', () => syncValues(XrangeInput, xInput, 'x'));
+        YrangeInput.addEventListener('input', () => syncValues(YrangeInput, yInput, 'y'));
+        RrangeInput.addEventListener('input', () => syncValues(RrangeInput, resInput, 'resolution'));
+
+        zoomInput.addEventListener('input', () => {
+            ZrangeInput.value = zoomInput.value;
+            if (zoomInput.value !== prevValues.zoom) {
+                needsRedraw = true;
+                prevValues.zoom = zoomInput.value;
+            }
+        });
+        xInput.addEventListener('input', () => {
+            XrangeInput.value = xInput.value;
+            if (xInput.value !== prevValues.x) {
+                needsRedraw = true;
+                prevValues.x = xInput.value;
+            }
+        });
+        yInput.addEventListener('input', () => {
+            YrangeInput.value = yInput.value;
+            if (yInput.value !== prevValues.y) {
+                needsRedraw = true;
+                prevValues.y = yInput.value;
+            }
+        });
+        resInput.addEventListener('input', () => {
+            RrangeInput.value = resInput.value;
+            if (resInput.value !== prevValues.resolution) {
+                needsRedraw = true;
+                prevValues.resolution = resInput.value;
+            }
+        });
+
+        const animate = () => {
+            const startTime = performance.now();
+            draw();
+            const endTime = performance.now();
+            const renderTime = Math.round(endTime - startTime);
+            renderTimeDisplay.textContent = `Render Time: ${renderTime} ms`;
+
+            frameCount++;
+            const currentTime = performance.now();
+            if (currentTime - lastTime >= 1000) {
+                fpsDisplay.textContent = `FPS: ${frameCount}`;
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+
+            requestAnimationFrame(animate);
+        };
+
+        animate();
+    </script>
+</body>
+
+</html>
